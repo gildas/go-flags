@@ -122,14 +122,13 @@ func (suite *FlagSuite) NewCommandWithSlice() *cobra.Command {
 
 func (suite *FlagSuite) TestEnumFlag() {
 	root := suite.NewCommand()
-	root.Flags().Var(&state, "state", "State of the flag")
 	state := flags.NewEnumFlag("+one", "two", "three")
 	root.Flags().Var(state, "state", "State of the flag")
 	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc())
 
 	output, err := suite.Execute(root, "__complete", "--state", "")
 	suite.Require().NoError(err)
-	suite.Assert().Equal("one\ntwo\nthree\n:4\nCompletion ended with directive: ShellCompDirectiveNoFileComp\n", output)
+	suite.Assert().Equal("one\ntwo\nthree\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
 
 	output, err = suite.Execute(root, "--state", "one")
 	suite.Require().NoError(err)
@@ -147,7 +146,7 @@ func (suite *FlagSuite) TestEnumFlagWithFunc() {
 
 	output, err := suite.Execute(root, "__complete", "--state", "")
 	suite.Require().NoError(err)
-	suite.Assert().Equal("one\ntwo\nthree\n:4\nCompletion ended with directive: ShellCompDirectiveNoFileComp\n", output)
+	suite.Assert().Equal("one\ntwo\nthree\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
 
 	output, err = suite.Execute(root, "--state", "one")
 	suite.Require().NoError(err)
@@ -165,7 +164,7 @@ func (suite *FlagSuite) TestEnumSliceFlag() {
 
 	output, err := suite.Execute(root, "__complete", "--state", "")
 	suite.Require().NoError(err)
-	suite.Assert().Equal("one\ntwo\nthree\n:4\nCompletion ended with directive: ShellCompDirectiveNoFileComp\n", output)
+	suite.Assert().Equal("one\ntwo\nthree\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
 
 	output, err = suite.Execute(root, "--state", "one", "--state", "two", "--state", "one")
 	suite.Require().NoError(err)

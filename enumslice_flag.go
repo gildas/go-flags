@@ -121,6 +121,6 @@ func (flag EnumSliceFlag) Contains(value string) bool {
 // CompletionFunc returns the completion function of the flag
 func (flag EnumSliceFlag) CompletionFunc() func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
-		return flag.Allowed, cobra.ShellCompDirectiveNoFileComp
+		return flag.Allowed, cobra.ShellCompDirectiveDefault
 	}
 }
