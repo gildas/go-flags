@@ -1,6 +1,6 @@
 module github.com/gildas/go-flags
 
-go 1.21.6
+go 1.21
 
 require (
 	github.com/gildas/go-core v0.5.7

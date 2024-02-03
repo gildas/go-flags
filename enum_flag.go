@@ -8,6 +8,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// EnumFlag represents a flag that can only have a value from a list of allowed values
+//
+// If the AllowedFunc is set, the Allowed values are ignored and the function is called to get the allowed values
 type EnumFlag struct {
 	Allowed     []string
 	AllowedFunc func(context.Context, *cobra.Command, []string) []string

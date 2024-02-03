@@ -8,6 +8,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// EnumSliceFlag represents a flag that can only have values from a list of allowed values
+//
+// The flag can be repeated to have multiple values
 type EnumSliceFlag struct {
 	Allowed    []string
 	Values     []string
