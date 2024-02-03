@@ -93,7 +93,7 @@ func (suite *FlagSuite) Execute(cmd *cobra.Command, args ...string) (string, err
 }
 
 func (suite *FlagSuite) NewCommand() *cobra.Command {
-	return &cobra.Command{Use: "root", RunE: func(cmd *cobra.Command, args []string) error {
+	cmd := &cobra.Command{Use: "root", RunE: func(cmd *cobra.Command, args []string) error {
 		value, err := cmd.Flags().GetString("state")
 		if err != nil {
 			suite.Logger.Errorf("Error getting flag: %s", err)
@@ -103,10 +103,12 @@ func (suite *FlagSuite) NewCommand() *cobra.Command {
 		cmd.Print(value)
 		return nil
 	}}
+	cmd.SetContext(suite.Logger.ToContext(context.Background()))
+	return cmd
 }
 
 func (suite *FlagSuite) NewCommandWithSlice() *cobra.Command {
-	return &cobra.Command{Use: "root", RunE: func(cmd *cobra.Command, args []string) error {
+	cmd := &cobra.Command{Use: "root", RunE: func(cmd *cobra.Command, args []string) error {
 		values, err := cmd.Flags().GetStringSlice("state")
 		if err != nil {
 			suite.Logger.Errorf("Error getting flag: %s", err)
@@ -116,6 +118,8 @@ func (suite *FlagSuite) NewCommandWithSlice() *cobra.Command {
 		cmd.Print(values)
 		return nil
 	}}
+	cmd.SetContext(suite.Logger.ToContext(context.Background()))
+	return cmd
 }
 
 // *****************************************************************************
