@@ -170,6 +170,10 @@ func (suite *FlagSuite) TestEnumSliceFlag() {
 	suite.Require().NoError(err)
 	suite.Assert().Equal("one\ntwo\nthree\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
 
+	output, err = suite.Execute(root, "__complete", "--state", "one", "--state", "")
+	suite.Require().NoError(err)
+	suite.Assert().Equal("two\nthree\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
+
 	output, err = suite.Execute(root, "--state", "one", "--state", "two", "--state", "one")
 	suite.Require().NoError(err)
 	suite.Assert().Equal("[one two]", output)
@@ -178,6 +182,28 @@ func (suite *FlagSuite) TestEnumSliceFlag() {
 	suite.Assert().True(state.Contains("one"))
 	suite.Assert().True(state.Contains("two"))
 	suite.Assert().False(state.Contains("three"))
+	suite.Assert().False(state.Contains("four"))
+}
+
+func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowed() {
+	root := suite.NewCommandWithSlice()
+	state := flags.NewEnumSliceFlagWithAllAllowed("+one", "two", "+three")
+	root.Flags().Var(state, "state", "State of the flag")
+	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+
+	values := state.Get()
+	suite.Assert().Equal([]string{"one", "three"}, values)
+
+	output, err := suite.Execute(root, "--state", "one", "--state", "two", "--state", "one")
+	suite.Require().NoError(err)
+	suite.Assert().Equal("[one two]", output)
+
+	values = state.Get()
+	suite.Assert().Equal([]string{"one", "two"}, values)
+	suite.Assert().True(state.Contains("one"))
+	suite.Assert().True(state.Contains("two"))
+	suite.Assert().False(state.Contains("three"))
+	suite.Assert().False(state.Contains("all"))
 	suite.Assert().False(state.Contains("four"))
 
 	output, err = suite.Execute(root, "--state", "all")
@@ -188,8 +214,35 @@ func (suite *FlagSuite) TestEnumSliceFlag() {
 	suite.Assert().True(state.Contains("one"))
 	suite.Assert().True(state.Contains("two"))
 	suite.Assert().True(state.Contains("three"))
+	suite.Assert().True(state.Contains("all"))
 	suite.Assert().False(state.Contains("four"))
 
 	_, err = suite.Execute(root, "--state", "four")
 	suite.Require().Error(err)
+}
+
+func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedCompletion() {
+	root := suite.NewCommandWithSlice()
+	state := flags.NewEnumSliceFlagWithAllAllowed("+one", "two", "+three")
+	root.Flags().Var(state, "state", "State of the flag")
+	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+
+	values := state.Get()
+	suite.Assert().Equal([]string{"one", "three"}, values)
+
+	output, err := suite.Execute(root, "__complete", "--state", "")
+	suite.Require().NoError(err)
+	suite.Assert().Equal("one\ntwo\nthree\nall\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
+
+	output, err = suite.Execute(root, "__complete", "--state", "one", "--state", "")
+	suite.Require().NoError(err)
+	suite.Assert().Equal("two\nthree\nall\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
+
+	output, err = suite.Execute(root, "__complete", "--state", "all", "--state", "")
+	suite.Require().NoError(err)
+	suite.Assert().Equal(":0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
+
+	output, err = suite.Execute(root, "__complete", "--state", "one", "--state", "all", "--state", "")
+	suite.Require().NoError(err)
+	suite.Assert().Equal(":0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
 }

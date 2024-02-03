@@ -124,6 +124,17 @@ func (flag EnumSliceFlag) Contains(value string) bool {
 // CompletionFunc returns the completion function of the flag
 func (flag EnumSliceFlag) CompletionFunc(flagName string) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return flag.Allowed, cobra.ShellCompDirectiveDefault
+		allowed := make([]string, 0, len(flag.Allowed))
+		if current, err := cmd.Flags().GetStringSlice(flagName); err == nil {
+			for _, value := range flag.Allowed {
+				if !core.Contains(current, value) {
+					allowed = append(allowed, value)
+				}
+			}
+		}
+		if flag.AllAllowed && len(allowed) > 0 {
+			allowed = append(allowed, "all")
+		}
+		return allowed, cobra.ShellCompDirectiveDefault
 	}
 }
