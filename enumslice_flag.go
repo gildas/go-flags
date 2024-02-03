@@ -21,6 +21,48 @@ func (flag EnumSliceFlag) Type() string {
 	return "stringSlice"
 }
 
+// NewEnumSliceFlag creates a new EnumSliceFlag
+//
+// The default values are prepended with a +
+//
+// # If no default value is provided, the flag will not have a default value
+//
+// Example:
+//
+//	flag := flags.NewEnumSliceFlag("+one", "+two", "three")
+func NewEnumSliceFlag(allowed ...string) *EnumSliceFlag {
+	var allowedValues []string
+	var defaultValues []string
+
+	for _, value := range allowed {
+		if strings.HasPrefix(value, "+") {
+			defaultValues = append(defaultValues, strings.TrimPrefix(value, "+"))
+			allowedValues = append(allowedValues, strings.TrimPrefix(value, "+"))
+		} else {
+			allowedValues = append(allowedValues, value)
+		}
+	}
+	return &EnumSliceFlag{
+		Allowed: allowedValues,
+		Default: defaultValues,
+	}
+}
+
+// NewEnumSliceFlagWithAllAllowed creates a new EnumSliceFlag
+//
+// The default values are prepended with a +
+//
+// # If no default value is provided, the flag will not have a default value
+//
+// Example:
+//
+//	flag := flags.NewEnumSliceFlag("+one", "+two", "three")
+func NewEnumSliceFlagWithAllAllowed(allowed ...string) *EnumSliceFlag {
+	flag := NewEnumSliceFlag(allowed...)
+	flag.AllAllowed = true
+	return flag
+}
+
 // String returns the string representation of the flag
 func (flag EnumSliceFlag) String() string {
 	var result strings.Builder

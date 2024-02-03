@@ -14,6 +14,43 @@ type EnumFlag struct {
 	Value       string
 }
 
+// NewEnumFlag creates a new EnumFlag
+//
+// The default value is prepended with a +
+//
+// # If no default value is provided, the flag will not have a default value
+//
+// # If more than one default value is provided, the first one is used
+//
+// Example:
+//
+//	flag := flags.NewEnumFlag("one", "+two", "three")
+func NewEnumFlag(allowed ...string) *EnumFlag {
+	var allowedValues []string
+	var defaultValue string
+
+	for _, value := range allowed {
+		if strings.HasPrefix(value, "+") && defaultValue == "" {
+			defaultValue = strings.TrimPrefix(value, "+")
+			allowedValues = append(allowedValues, strings.TrimPrefix(value, "+"))
+		} else {
+			allowedValues = append(allowedValues, value)
+		}
+	}
+	return &EnumFlag{
+		Allowed: allowedValues,
+		Value:   defaultValue,
+	}
+}
+
+// NewEnumFlagWithFunc creates a new EnumFlag with a function to get the allowed values
+func NewEnumFlagWithFunc(defaultValue string, allowedFunc func(context.Context, *cobra.Command, []string) []string) *EnumFlag {
+	return &EnumFlag{
+		AllowedFunc: allowedFunc,
+		Value:       defaultValue,
+	}
+}
+
 // Type returns the type of the flag
 func (flag EnumFlag) Type() string {
 	return "string"
