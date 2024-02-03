@@ -77,7 +77,7 @@ func (flag *EnumFlag) Set(value string) error {
 }
 
 // CompletionFunc returns the completion function of the flag
-func (flag EnumFlag) CompletionFunc() func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+func (flag EnumFlag) CompletionFunc(flagName string) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if flag.AllowedFunc != nil {
 			return flag.AllowedFunc(cmd.Context(), cmd, args), cobra.ShellCompDirectiveDefault
