@@ -109,6 +109,9 @@ func (flag EnumSliceFlag) Get() []string {
 
 // Contains returns true if the flag contains the given value
 func (flag EnumSliceFlag) Contains(value string) bool {
+	if flag.all && value == "all" {
+		return true
+	}
 	if !core.Contains(flag.Allowed, value) {
 		return false
 	}
