@@ -1,4 +1,4 @@
 package flags
 
 // VERSION is the version of this package
-var VERSION = "0.1.0"
+var VERSION = "0.1.1"
