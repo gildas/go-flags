@@ -152,7 +152,11 @@ func (suite *FlagSuite) TestEnumFlagWithFunc() {
 
 	suite.Assert().Equal("one", state.Value)
 
-	output, err := suite.Execute(root, "__complete", "--state", "")
+	output, err := suite.Execute(root, "--state", "two")
+	suite.Require().NoError(err)
+	suite.Assert().Equal("two", output)
+
+	output, err = suite.Execute(root, "__complete", "--state", "")
 	suite.Require().NoError(err)
 	suite.Assert().Equal("one\ntwo\nthree\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
 
@@ -199,10 +203,10 @@ func (suite *FlagSuite) TestEnumSliceFlag() {
 	suite.Assert().Equal("[one two]", output)
 	values = state.Get()
 	suite.Assert().Equal([]string{"one", "two"}, values)
-	suite.Assert().True(state.Contains("one"))
-	suite.Assert().True(state.Contains("two"))
-	suite.Assert().False(state.Contains("three"))
-	suite.Assert().False(state.Contains("four"))
+	suite.Assert().True(state.Contains("one"), "one is not in the list")
+	suite.Assert().True(state.Contains("two"), "two is not in the list")
+	suite.Assert().False(state.Contains("three"), "three is in the list")
+	suite.Assert().False(state.Contains("four"), "four is in the list")
 }
 
 func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowed() {
@@ -225,6 +229,9 @@ func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowed() {
 	suite.Assert().False(state.Contains("three"))
 	suite.Assert().False(state.Contains("all"))
 	suite.Assert().False(state.Contains("four"))
+
+	_, err = suite.Execute(root, "--state", "four")
+	suite.Require().Error(err, "four should not be allowed")
 
 	output, err = suite.Execute(root, "--state", "all")
 	suite.Require().NoError(err)
@@ -265,4 +272,94 @@ func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedCompletion() {
 	output, err = suite.Execute(root, "__complete", "--state", "one", "--state", "all", "--state", "")
 	suite.Require().NoError(err)
 	suite.Assert().Equal(":0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
+}
+
+func (suite *FlagSuite) TestEnumSliceFlagWithFunc() {
+	root := suite.NewCommandWithSlice()
+	state := flags.NewEnumSliceFlagWithFunc(func(context context.Context, cmd *cobra.Command, args []string) []string {
+		if len(args) > 0 && args[0] == "__default__" {
+			return []string{"one", "two"}
+		}
+		return []string{"one", "two", "three"}
+	})
+	root.Flags().Var(state, "state", "State of the flag")
+	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+
+	values := state.Get()
+	suite.Assert().Equal([]string{"one", "two"}, values)
+
+	output, err := suite.Execute(root, "__complete", "--state", "")
+	suite.Require().NoError(err)
+	suite.Assert().Equal("one\ntwo\nthree\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
+
+	output, err = suite.Execute(root, "--state", "one")
+	suite.Require().NoError(err)
+	suite.Assert().Equal("[one]", output)
+
+	_, err = suite.Execute(root, "--state", "four")
+	suite.Require().Error(err, "four should not be allowed")
+
+	output, err = suite.Execute(root, "--state", "one,two")
+	suite.Require().NoError(err)
+	suite.Assert().Equal("[one two]", output)
+	values = state.Get()
+	suite.Assert().Equal([]string{"one", "two"}, values)
+	suite.Assert().True(state.Contains("one"), "one is not in the list")
+	suite.Assert().True(state.Contains("two"), "two is not in the list")
+	suite.Assert().False(state.Contains("three"), "three is in the list")
+	suite.Assert().False(state.Contains("four"), "four is in the list")
+
+	output, err = suite.Execute(root, "--state", "one", "--state", "two", "--state", "one")
+	suite.Require().NoError(err)
+	suite.Assert().Equal("[one two]", output)
+	values = state.Get()
+	suite.Assert().Equal([]string{"one", "two"}, values)
+	suite.Assert().True(state.Contains("one"), "one is not in the list")
+	suite.Assert().True(state.Contains("two"), "two is not in the list")
+	suite.Assert().False(state.Contains("three"), "three is in the list")
+	suite.Assert().False(state.Contains("four"), "four is in the list")
+}
+
+func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedAndFunc() {
+	root := suite.NewCommandWithSlice()
+	state := flags.NewEnumSliceFlagWithAllAllowedAndFunc(func(context context.Context, cmd *cobra.Command, args []string) []string {
+		if len(args) > 0 && args[0] == "__default__" {
+			return []string{"one", "three"}
+		}
+		return []string{"one", "two", "three"}
+	})
+	root.Flags().Var(state, "state", "State of the flag")
+	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+
+	values := state.Get()
+	suite.Assert().Equal([]string{"one", "three"}, values)
+
+	output, err := suite.Execute(root, "--state", "one", "--state", "two", "--state", "one")
+	suite.Require().NoError(err)
+	suite.Assert().Equal("[one two]", output)
+
+	values = state.Get()
+	suite.Assert().Equal([]string{"one", "two"}, values)
+	suite.Assert().True(state.Contains("one"))
+	suite.Assert().True(state.Contains("two"))
+	suite.Assert().False(state.Contains("three"))
+	suite.Assert().False(state.Contains("all"))
+	suite.Assert().False(state.Contains("four"))
+
+	_, err = suite.Execute(root, "--state", "four")
+	suite.Require().Error(err, "four should not be allowed")
+
+	output, err = suite.Execute(root, "--state", "all")
+	suite.Require().NoError(err)
+	suite.Assert().Equal("[one two three]", output)
+	values = state.Get()
+	suite.Assert().Equal([]string{"one", "two", "three"}, values)
+	suite.Assert().True(state.Contains("one"))
+	suite.Assert().True(state.Contains("two"))
+	suite.Assert().True(state.Contains("three"))
+	suite.Assert().True(state.Contains("all"))
+	suite.Assert().False(state.Contains("four"))
+
+	_, err = suite.Execute(root, "--state", "four")
+	suite.Require().Error(err)
 }
