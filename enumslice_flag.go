@@ -10,7 +10,7 @@ import (
 
 // EnumSliceFlag represents a flag that can only have values from a list of allowed values
 //
-// The flag can be repeated to have multiple values
+// The flag can be repeated to have multiple values.
 type EnumSliceFlag struct {
 	Allowed    []string
 	Values     []string
@@ -26,9 +26,9 @@ func (flag EnumSliceFlag) Type() string {
 
 // NewEnumSliceFlag creates a new EnumSliceFlag
 //
-// The default values are prepended with a +
+// The default values are prepended with a +.
 //
-// If no default value is provided, the flag will not have a default value
+// If no default value is provided, the flag will not have a default value.
 //
 // Example:
 //

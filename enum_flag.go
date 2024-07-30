@@ -10,7 +10,7 @@ import (
 
 // EnumFlag represents a flag that can only have a value from a list of allowed values
 //
-// If the AllowedFunc is set, the Allowed values are ignored and the function is called to get the allowed values
+// If the AllowedFunc is set, the Allowed values are ignored and the function is called to get the allowed values.
 type EnumFlag struct {
 	Allowed     []string
 	AllowedFunc func(context.Context, *cobra.Command, []string) []string
@@ -19,11 +19,11 @@ type EnumFlag struct {
 
 // NewEnumFlag creates a new EnumFlag
 //
-// The default value is prepended with a +
+// The default value is prepended with a +.
 //
-// # If no default value is provided, the flag will not have a default value
+// If no default value is provided, the flag will not have a default value.
 //
-// # If more than one default value is provided, the first one is used
+// If more than one default value is provided, the first one is used.
 //
 // Example:
 //
