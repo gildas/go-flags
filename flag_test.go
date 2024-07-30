@@ -24,7 +24,7 @@ type FlagSuite struct {
 	Start  time.Time
 }
 
-func TestPullRequestSuite(t *testing.T) {
+func TestFlagSuite(t *testing.T) {
 	suite.Run(t, new(FlagSuite))
 }
 
@@ -175,6 +175,16 @@ func (suite *FlagSuite) TestEnumSliceFlag() {
 	suite.Assert().Equal("two\nthree\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
 
 	output, err = suite.Execute(root, "--state", "one", "--state", "two", "--state", "one")
+	suite.Require().NoError(err)
+	suite.Assert().Equal("[one two]", output)
+	values = state.Get()
+	suite.Assert().Equal([]string{"one", "two"}, values)
+	suite.Assert().True(state.Contains("one"))
+	suite.Assert().True(state.Contains("two"))
+	suite.Assert().False(state.Contains("three"))
+	suite.Assert().False(state.Contains("four"))
+
+	output, err = suite.Execute(root, "--state", "one,two")
 	suite.Require().NoError(err)
 	suite.Assert().Equal("[one two]", output)
 	values = state.Get()

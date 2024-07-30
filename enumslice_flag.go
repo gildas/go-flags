@@ -28,7 +28,7 @@ func (flag EnumSliceFlag) Type() string {
 //
 // The default values are prepended with a +
 //
-// # If no default value is provided, the flag will not have a default value
+// If no default value is provided, the flag will not have a default value
 //
 // Example:
 //
@@ -88,15 +88,17 @@ func (flag *EnumSliceFlag) Set(value string) error {
 		flag.all = true
 		return nil
 	}
-	for _, allowed := range flag.Allowed {
-		if value == allowed {
-			for _, existing := range flag.Values {
-				if existing == value {
-					return nil
+	for _, v := range strings.Split(value, ",") {
+		for _, allowed := range flag.Allowed {
+			if v == allowed {
+				for _, existing := range flag.Values {
+					if existing == v {
+						return nil
+					}
 				}
+				flag.Values = append(flag.Values, v)
+				return nil
 			}
-			flag.Values = append(flag.Values, value)
-			return nil
 		}
 	}
 	return errors.ArgumentInvalid.With("value", value, strings.Join(flag.Allowed, ", "))
