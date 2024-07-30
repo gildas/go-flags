@@ -5,12 +5,13 @@ import (
 	"strings"
 
 	"github.com/gildas/go-errors"
+	"github.com/gildas/go-logger"
 	"github.com/spf13/cobra"
 )
 
 // EnumFlag represents a flag that can only have a value from a list of allowed values
 //
-// If the AllowedFunc is set, the Allowed values are ignored and the function is called to get the allowed values
+// If the AllowedFunc is set, the Allowed values are ignored and the function is called to get the allowed values.
 type EnumFlag struct {
 	Allowed     []string
 	AllowedFunc func(context.Context, *cobra.Command, []string) []string
@@ -19,11 +20,11 @@ type EnumFlag struct {
 
 // NewEnumFlag creates a new EnumFlag
 //
-// The default value is prepended with a +
+// The default value is prepended with a +.
 //
-// # If no default value is provided, the flag will not have a default value
+// If no default value is provided, the flag will not have a default value.
 //
-// # If more than one default value is provided, the first one is used
+// If more than one default value is provided, the first one is used.
 //
 // Example:
 //
@@ -66,9 +67,9 @@ func (flag EnumFlag) String() string {
 
 // Set sets the flag value
 func (flag *EnumFlag) Set(value string) error {
-	if flag.AllowedFunc != nil {
-		flag.Value = value
-		return nil
+	if flag.AllowedFunc != nil && len(flag.Allowed) == 0 {
+		log := logger.Create("Flags", &logger.NilStream{})
+		flag.Allowed = flag.AllowedFunc(log.ToContext(context.Background()), nil, nil)
 	}
 	for _, allowed := range flag.Allowed {
 		if value == allowed {
@@ -80,10 +81,10 @@ func (flag *EnumFlag) Set(value string) error {
 }
 
 // CompletionFunc returns the completion function of the flag
-func (flag EnumFlag) CompletionFunc(flagName string) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+func (flag *EnumFlag) CompletionFunc(flagName string) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if flag.AllowedFunc != nil {
-			return flag.AllowedFunc(cmd.Context(), cmd, args), cobra.ShellCompDirectiveDefault
+			flag.Allowed = flag.AllowedFunc(cmd.Context(), cmd, args)
 		}
 		return flag.Allowed, cobra.ShellCompDirectiveDefault
 	}

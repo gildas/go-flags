@@ -1,22 +1,25 @@
 package flags
 
 import (
+	"context"
 	"strings"
 
 	"github.com/gildas/go-core"
 	"github.com/gildas/go-errors"
+	"github.com/gildas/go-logger"
 	"github.com/spf13/cobra"
 )
 
 // EnumSliceFlag represents a flag that can only have values from a list of allowed values
 //
-// The flag can be repeated to have multiple values
+// The flag can be repeated to have multiple values.
 type EnumSliceFlag struct {
-	Allowed    []string
-	Values     []string
-	Default    []string
-	AllAllowed bool
-	all        bool
+	Allowed     []string
+	Values      []string
+	Default     []string
+	AllowedFunc func(context.Context, *cobra.Command, []string) []string
+	AllAllowed  bool
+	all         bool
 }
 
 // Type returns the type of the flag
@@ -26,9 +29,9 @@ func (flag EnumSliceFlag) Type() string {
 
 // NewEnumSliceFlag creates a new EnumSliceFlag
 //
-// The default values are prepended with a +
+// The default values are prepended with a +.
 //
-// # If no default value is provided, the flag will not have a default value
+// If no default value is provided, the flag will not have a default value.
 //
 // Example:
 //
@@ -51,17 +54,57 @@ func NewEnumSliceFlag(allowed ...string) *EnumSliceFlag {
 	}
 }
 
-// NewEnumSliceFlagWithAllAllowed creates a new EnumSliceFlag
+// NewEnumSliceFlagWithFunc creates a new EnumSliceFlag
 //
-// The default values are prepended with a +
+// The default values are prepended with a +.
 //
-// # If no default value is provided, the flag will not have a default value
+// The values and default values are set by the function. When the function is called with a "__default__" argument, the default values should be returned.
 //
 // Example:
 //
-//	flag := flags.NewEnumSliceFlag("+one", "+two", "three")
+//		 func myfunc(ctx context.Context, cmd *cobra.Command, args []string) []string {
+//	   if len(args) > 0 && args[0] == "__default__" {
+//		 	  return []string{"one", "two"}
+//	   }
+//		 	return []string{"one", "two", "three"}
+//		 }
+//			flag := flags.NewEnumSliceFlagWithFunc(myfunc)
+func NewEnumSliceFlagWithFunc(allowedFunc func(context.Context, *cobra.Command, []string) []string) *EnumSliceFlag {
+	return &EnumSliceFlag{
+		AllowedFunc: allowedFunc,
+	}
+}
+
+// NewEnumSliceFlagWithAllAllowed creates a new EnumSliceFlag
+//
+// The default values are prepended with a +.
+//
+// If the flag is set to "all", all the allowed values are set.
+//
+// If no default value is provided, the flag will not have a default value.
+//
+// Example:
+//
+//	flag := flags.NewEnumSliceFlagWithAllAllowed("+one", "+two", "three")
 func NewEnumSliceFlagWithAllAllowed(allowed ...string) *EnumSliceFlag {
 	flag := NewEnumSliceFlag(allowed...)
+	flag.AllAllowed = true
+	return flag
+}
+
+// NewEnumSliceFlagWithAllAllowedAndFunc creates a new EnumSliceFlag
+//
+// The default values are prepended with a +.
+//
+// If the flag is set to "all", all the allowed values are set.
+//
+// The values and default values are set by the function. When the function is called with a "__default__" argument, the default values should be returned.
+//
+// Example:
+//
+//	flag := flags.NewEnumSliceFlagWithAllAllowedAndFunc(myfunc)
+func NewEnumSliceFlagWithAllAllowedAndFunc(allowedFunc func(context.Context, *cobra.Command, []string) []string) *EnumSliceFlag {
+	flag := NewEnumSliceFlagWithFunc(allowedFunc)
 	flag.AllAllowed = true
 	return flag
 }
@@ -83,21 +126,28 @@ func (flag EnumSliceFlag) String() string {
 
 // Set sets the flag value
 func (flag *EnumSliceFlag) Set(value string) error {
+	if flag.AllowedFunc != nil {
+		log := logger.Create("Flags", &logger.NilStream{})
+		flag.Allowed = flag.AllowedFunc(log.ToContext(context.Background()), nil, nil)
+	}
 	if value == "all" && flag.AllAllowed {
 		flag.Values = flag.Allowed
 		flag.all = true
 		return nil
 	}
-	for _, allowed := range flag.Allowed {
-		if value == allowed {
-			for _, existing := range flag.Values {
-				if existing == value {
-					return nil
+	found := false
+	for _, v := range strings.Split(value, ",") {
+		for _, allowed := range flag.Allowed {
+			if v == allowed {
+				found = true
+				if !core.Contains(flag.Values, v) {
+					flag.Values = append(flag.Values, v)
 				}
 			}
-			flag.Values = append(flag.Values, value)
-			return nil
 		}
+	}
+	if found {
+		return nil
 	}
 	return errors.ArgumentInvalid.With("value", value, strings.Join(flag.Allowed, ", "))
 }
@@ -105,6 +155,10 @@ func (flag *EnumSliceFlag) Set(value string) error {
 // Get returns the flag value
 func (flag EnumSliceFlag) Get() []string {
 	if len(flag.Values) == 0 {
+		if flag.AllowedFunc != nil {
+			log := logger.Create("Flags", &logger.NilStream{})
+			return flag.AllowedFunc(log.ToContext(context.Background()), nil, []string{"__default__"})
+		}
 		return flag.Default
 	}
 	return flag.Values
@@ -127,11 +181,17 @@ func (flag EnumSliceFlag) Contains(value string) bool {
 // CompletionFunc returns the completion function of the flag
 func (flag EnumSliceFlag) CompletionFunc(flagName string) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		allowed := make([]string, 0, len(flag.Allowed))
-		if current, err := cmd.Flags().GetStringSlice(flagName); err == nil {
-			for _, value := range flag.Allowed {
-				if !core.Contains(current, value) {
-					allowed = append(allowed, value)
+		var allowed []string
+
+		if flag.AllowedFunc != nil {
+			allowed = flag.AllowedFunc(cmd.Context(), cmd, args)
+		} else {
+			allowed = make([]string, 0, len(flag.Allowed))
+			if current, err := cmd.Flags().GetStringSlice(flagName); err == nil {
+				for _, value := range flag.Allowed {
+					if !core.Contains(current, value) {
+						allowed = append(allowed, value)
+					}
 				}
 			}
 		}
