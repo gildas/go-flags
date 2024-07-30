@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gildas/go-errors"
+	"github.com/gildas/go-logger"
 	"github.com/spf13/cobra"
 )
 
@@ -66,9 +67,9 @@ func (flag EnumFlag) String() string {
 
 // Set sets the flag value
 func (flag *EnumFlag) Set(value string) error {
-	if flag.AllowedFunc != nil {
-		flag.Value = value
-		return nil
+	if flag.AllowedFunc != nil && len(flag.Allowed) == 0 {
+		log := logger.Create("Flags", &logger.NilStream{})
+		flag.Allowed = flag.AllowedFunc(log.ToContext(context.Background()), nil, nil)
 	}
 	for _, allowed := range flag.Allowed {
 		if value == allowed {
@@ -80,10 +81,10 @@ func (flag *EnumFlag) Set(value string) error {
 }
 
 // CompletionFunc returns the completion function of the flag
-func (flag EnumFlag) CompletionFunc(flagName string) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+func (flag *EnumFlag) CompletionFunc(flagName string) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if flag.AllowedFunc != nil {
-			return flag.AllowedFunc(cmd.Context(), cmd, args), cobra.ShellCompDirectiveDefault
+			flag.Allowed = flag.AllowedFunc(cmd.Context(), cmd, args)
 		}
 		return flag.Allowed, cobra.ShellCompDirectiveDefault
 	}

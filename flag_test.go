@@ -130,6 +130,8 @@ func (suite *FlagSuite) TestEnumFlag() {
 	root.Flags().Var(state, "state", "State of the flag")
 	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
 
+	suite.Assert().Equal("one", state.Value)
+
 	output, err := suite.Execute(root, "__complete", "--state", "")
 	suite.Require().NoError(err)
 	suite.Assert().Equal("one\ntwo\nthree\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
@@ -148,6 +150,8 @@ func (suite *FlagSuite) TestEnumFlagWithFunc() {
 	root.Flags().Var(state, "state", "State of the flag")
 	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
 
+	suite.Assert().Equal("one", state.Value)
+
 	output, err := suite.Execute(root, "__complete", "--state", "")
 	suite.Require().NoError(err)
 	suite.Assert().Equal("one\ntwo\nthree\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
@@ -155,6 +159,9 @@ func (suite *FlagSuite) TestEnumFlagWithFunc() {
 	output, err = suite.Execute(root, "--state", "one")
 	suite.Require().NoError(err)
 	suite.Assert().Equal("one", output)
+
+	_, err = suite.Execute(root, "--state", "four")
+	suite.Require().Error(err)
 }
 
 func (suite *FlagSuite) TestEnumSliceFlag() {
@@ -173,6 +180,9 @@ func (suite *FlagSuite) TestEnumSliceFlag() {
 	output, err = suite.Execute(root, "__complete", "--state", "one", "--state", "")
 	suite.Require().NoError(err)
 	suite.Assert().Equal("two\nthree\n:0\nCompletion ended with directive: ShellCompDirectiveDefault\n", output)
+
+	_, err = suite.Execute(root, "--state", "four")
+	suite.Require().Error(err, "four should not be allowed")
 
 	output, err = suite.Execute(root, "--state", "one", "--state", "two", "--state", "one")
 	suite.Require().NoError(err)
