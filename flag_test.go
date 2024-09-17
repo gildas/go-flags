@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gildas/go-errors"
 	"github.com/gildas/go-flags"
 	"github.com/gildas/go-logger"
 	"github.com/joho/godotenv"
@@ -146,7 +147,9 @@ func (suite *FlagSuite) TestEnumFlag() {
 
 func (suite *FlagSuite) TestEnumFlagWithFunc() {
 	root := suite.NewCommand()
-	state := flags.NewEnumFlagWithFunc("one", func(context.Context, *cobra.Command, []string) []string { return []string{"one", "two", "three"} })
+	state := flags.NewEnumFlagWithFunc("one", func(context.Context, *cobra.Command, []string) ([]string, error) {
+		return []string{"one", "two", "three"}, nil
+	})
 	root.Flags().Var(state, "state", "State of the flag")
 	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
 
@@ -166,6 +169,19 @@ func (suite *FlagSuite) TestEnumFlagWithFunc() {
 
 	_, err = suite.Execute(root, "--state", "four")
 	suite.Require().Error(err)
+}
+
+func (suite *FlagSuite) TestEnumFlagWithFuncReturningError() {
+	root := suite.NewCommand()
+	state := flags.NewEnumFlagWithFunc("one", func(context.Context, *cobra.Command, []string) ([]string, error) {
+		return []string{}, errors.NotImplemented
+	})
+	root.Flags().Var(state, "state", "State of the flag")
+	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+
+	output, err := suite.Execute(root, "__complete", "--state", "")
+	suite.Require().NoError(err)
+	suite.Assert().Equal(":1\nCompletion ended with directive: ShellCompDirectiveError\n", output)
 }
 
 func (suite *FlagSuite) TestEnumSliceFlag() {
