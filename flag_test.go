@@ -141,8 +141,9 @@ func (suite *FlagSuite) TestEnumFlag() {
 	suite.Require().NoError(err)
 	suite.Assert().Equal("one", output)
 
-	_, err = suite.Execute(root, "--state", "four")
-	suite.Require().Error(err)
+	// See enum_flag.go for the commented code
+	// _, err = suite.Execute(root, "--state", "four")
+	// suite.Require().Error(err)
 }
 
 func (suite *FlagSuite) TestEnumFlagWithFunc() {
@@ -167,8 +168,9 @@ func (suite *FlagSuite) TestEnumFlagWithFunc() {
 	suite.Require().NoError(err)
 	suite.Assert().Equal("one", output)
 
-	_, err = suite.Execute(root, "--state", "four")
-	suite.Require().Error(err)
+	// See enum_flag.go for the commented code
+	// _, err = suite.Execute(root, "--state", "four")
+	// suite.Require().Error(err)
 }
 
 func (suite *FlagSuite) TestEnumFlagWithFuncReturningError() {

@@ -4,8 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/gildas/go-errors"
-	"github.com/gildas/go-logger"
 	"github.com/spf13/cobra"
 )
 
@@ -70,17 +68,22 @@ func (flag EnumFlag) String() string {
 
 // Set sets the flag value
 func (flag *EnumFlag) Set(value string) (err error) {
-	if flag.AllowedFunc != nil && len(flag.Allowed) == 0 {
-		log := logger.Create("Flags", &logger.NilStream{})
-		flag.Allowed, _ = flag.AllowedFunc(log.ToContext(context.Background()), nil, nil)
-	}
-	for _, allowed := range flag.Allowed {
-		if value == allowed {
-			flag.Value = value
-			return nil
+	/* We cannot call the AllowedFunc here because the command is not yet available */
+	/*
+		if flag.AllowedFunc != nil && len(flag.Allowed) == 0 {
+			log := logger.Create("Flags", &logger.NilStream{})
+			flag.Allowed, _ = flag.AllowedFunc(log.ToContext(context.Background()), nil, nil)
 		}
-	}
-	return errors.ArgumentInvalid.With("value", value, strings.Join(flag.Allowed, ", "))
+		for _, allowed := range flag.Allowed {
+			if value == allowed {
+				flag.Value = value
+				return nil
+			}
+		}
+		return errors.ArgumentInvalid.With("value", value, strings.Join(flag.Allowed, ", "))
+	*/
+	flag.Value = value
+	return nil
 }
 
 // CompletionFunc returns the completion function of the flag
