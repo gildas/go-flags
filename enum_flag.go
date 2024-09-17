@@ -9,12 +9,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// AllowedFunc is a function that returns the allowed values for a flag
+type AllowedFunc func(context.Context, *cobra.Command, []string) ([]string, error)
+
 // EnumFlag represents a flag that can only have a value from a list of allowed values
 //
 // If the AllowedFunc is set, the Allowed values are ignored and the function is called to get the allowed values.
 type EnumFlag struct {
 	Allowed     []string
-	AllowedFunc func(context.Context, *cobra.Command, []string) []string
+	AllowedFunc AllowedFunc
 	Value       string
 }
 
@@ -48,7 +51,7 @@ func NewEnumFlag(allowed ...string) *EnumFlag {
 }
 
 // NewEnumFlagWithFunc creates a new EnumFlag with a function to get the allowed values
-func NewEnumFlagWithFunc(defaultValue string, allowedFunc func(context.Context, *cobra.Command, []string) []string) *EnumFlag {
+func NewEnumFlagWithFunc(defaultValue string, allowedFunc AllowedFunc) *EnumFlag {
 	return &EnumFlag{
 		AllowedFunc: allowedFunc,
 		Value:       defaultValue,
@@ -66,10 +69,10 @@ func (flag EnumFlag) String() string {
 }
 
 // Set sets the flag value
-func (flag *EnumFlag) Set(value string) error {
+func (flag *EnumFlag) Set(value string) (err error) {
 	if flag.AllowedFunc != nil && len(flag.Allowed) == 0 {
 		log := logger.Create("Flags", &logger.NilStream{})
-		flag.Allowed = flag.AllowedFunc(log.ToContext(context.Background()), nil, nil)
+		flag.Allowed, _ = flag.AllowedFunc(log.ToContext(context.Background()), nil, nil)
 	}
 	for _, allowed := range flag.Allowed {
 		if value == allowed {
@@ -84,7 +87,12 @@ func (flag *EnumFlag) Set(value string) error {
 func (flag *EnumFlag) CompletionFunc(flagName string) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if flag.AllowedFunc != nil {
-			flag.Allowed = flag.AllowedFunc(cmd.Context(), cmd, args)
+			var err error
+
+			flag.Allowed, err = flag.AllowedFunc(cmd.Context(), cmd, args)
+			if err != nil {
+				return []string{}, cobra.ShellCompDirectiveError
+			}
 		}
 		return flag.Allowed, cobra.ShellCompDirectiveDefault
 	}
