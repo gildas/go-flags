@@ -57,16 +57,22 @@ func NewEnumFlagWithFunc(defaultValue string, allowedFunc AllowedFunc) *EnumFlag
 }
 
 // Type returns the type of the flag
+//
+// implements pflag.Value
 func (flag EnumFlag) Type() string {
 	return "string"
 }
 
 // String returns the string representation of the flag
+//
+// implements fmt.Stringer and pflag.Value
 func (flag EnumFlag) String() string {
 	return flag.Value
 }
 
 // Set sets the flag value
+//
+// implements pflag.Value
 func (flag *EnumFlag) Set(value string) (err error) {
 	/* We cannot call the AllowedFunc here because the command is not yet available */
 	/*
