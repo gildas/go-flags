@@ -1,12 +1,10 @@
 package flags
 
 import (
-	"context"
 	"strings"
 
 	"github.com/gildas/go-core"
 	"github.com/gildas/go-errors"
-	"github.com/gildas/go-logger"
 	"github.com/spf13/cobra"
 )
 
@@ -17,12 +15,14 @@ type EnumSliceFlag struct {
 	Allowed     []string
 	Values      []string
 	Default     []string
-	AllowedFunc func(context.Context, *cobra.Command, []string) []string
+	AllowedFunc AllowedFunc
 	AllAllowed  bool
 	all         bool
 }
 
 // Type returns the type of the flag
+//
+// implements pflag.Value
 func (flag EnumSliceFlag) Type() string {
 	return "stringSlice"
 }
@@ -55,23 +55,10 @@ func NewEnumSliceFlag(allowed ...string) *EnumSliceFlag {
 }
 
 // NewEnumSliceFlagWithFunc creates a new EnumSliceFlag
-//
-// The default values are prepended with a +.
-//
-// The values and default values are set by the function. When the function is called with a "__default__" argument, the default values should be returned.
-//
-// Example:
-//
-//		 func myfunc(ctx context.Context, cmd *cobra.Command, args []string) []string {
-//	   if len(args) > 0 && args[0] == "__default__" {
-//		 	  return []string{"one", "two"}
-//	   }
-//		 	return []string{"one", "two", "three"}
-//		 }
-//			flag := flags.NewEnumSliceFlagWithFunc(myfunc)
-func NewEnumSliceFlagWithFunc(allowedFunc func(context.Context, *cobra.Command, []string) []string) *EnumSliceFlag {
+func NewEnumSliceFlagWithFunc(allowedFunc AllowedFunc, defaultvalues ...string) *EnumSliceFlag {
 	return &EnumSliceFlag{
 		AllowedFunc: allowedFunc,
+		Default:     append([]string{}, defaultvalues...),
 	}
 }
 
@@ -93,23 +80,15 @@ func NewEnumSliceFlagWithAllAllowed(allowed ...string) *EnumSliceFlag {
 }
 
 // NewEnumSliceFlagWithAllAllowedAndFunc creates a new EnumSliceFlag
-//
-// The default values are prepended with a +.
-//
-// If the flag is set to "all", all the allowed values are set.
-//
-// The values and default values are set by the function. When the function is called with a "__default__" argument, the default values should be returned.
-//
-// Example:
-//
-//	flag := flags.NewEnumSliceFlagWithAllAllowedAndFunc(myfunc)
-func NewEnumSliceFlagWithAllAllowedAndFunc(allowedFunc func(context.Context, *cobra.Command, []string) []string) *EnumSliceFlag {
-	flag := NewEnumSliceFlagWithFunc(allowedFunc)
+func NewEnumSliceFlagWithAllAllowedAndFunc(allowedFunc AllowedFunc, defaultvalues ...string) *EnumSliceFlag {
+	flag := NewEnumSliceFlagWithFunc(allowedFunc, defaultvalues...)
 	flag.AllAllowed = true
 	return flag
 }
 
 // String returns the string representation of the flag
+//
+// implements fmt.Stringer and pflag.Value
 func (flag EnumSliceFlag) String() string {
 	var result strings.Builder
 
@@ -125,10 +104,12 @@ func (flag EnumSliceFlag) String() string {
 }
 
 // Set sets the flag value
-func (flag *EnumSliceFlag) Set(value string) error {
-	if flag.AllowedFunc != nil {
-		log := logger.Create("Flags", &logger.NilStream{})
-		flag.Allowed = flag.AllowedFunc(log.ToContext(context.Background()), nil, nil)
+//
+// implements pflag.Value
+func (flag *EnumSliceFlag) Set(value string) (err error) {
+	if flag.AllowedFunc != nil && len(flag.Allowed) == 0 { // Unfortunatly, as of now, we cannot call the function to get the allowed values
+		// TODO: Find a way to call the function to get the allowed values
+		return flag.Append(value) // so we just add the value
 	}
 	if value == "all" && flag.AllAllowed {
 		flag.Values = flag.Allowed
@@ -152,39 +133,60 @@ func (flag *EnumSliceFlag) Set(value string) error {
 	return errors.ArgumentInvalid.With("value", value, strings.Join(flag.Allowed, ", "))
 }
 
-// Get returns the flag value
-func (flag EnumSliceFlag) Get() []string {
-	if len(flag.Values) == 0 {
-		if flag.AllowedFunc != nil {
-			log := logger.Create("Flags", &logger.NilStream{})
-			return flag.AllowedFunc(log.ToContext(context.Background()), nil, []string{"__default__"})
+// Append appends a value to the flag
+//
+// implements pflag.SliceValue
+func (flag *EnumSliceFlag) Append(value string) error {
+	for _, v := range strings.Split(value, ",") {
+		if !core.Contains(flag.Values, v) {
+			flag.Values = append(flag.Values, v)
 		}
+	}
+	return nil
+}
+
+// Replace replaces the flag values with the given values
+//
+// implements pflag.SliceValue
+func (flag *EnumSliceFlag) Replace(values []string) error {
+	flag.Values = make([]string, 0, len(values))
+	for _, value := range values {
+		if err := flag.Append(value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// GetSlice returns the flag value list as a slice of strings
+//
+// implements pflag.SliceValue
+func (flag EnumSliceFlag) GetSlice() []string {
+	if len(flag.Values) == 0 {
+		// TODO: Find a way to call the function to get the allowed values to build the default values (if any)
 		return flag.Default
+	}
+	if flag.all {
+		return append(append([]string{}, "all"), flag.Values...)
 	}
 	return flag.Values
 }
 
-// Contains returns true if the flag contains the given value
-func (flag EnumSliceFlag) Contains(value string) bool {
-	if flag.all && value == "all" {
-		return true
-	}
-	if !core.Contains(flag.Allowed, value) {
-		return false
-	}
-	if flag.all {
-		return true
-	}
-	return core.Contains(flag.Values, value)
-}
-
 // CompletionFunc returns the completion function of the flag
+//
+// This function is used by the cobra.Command when it needs to complete the flag value.
+//
+// See: https://pkg.go.dev/github.com/spf13/cobra#Command.RegisterFlagCompletionFunc
 func (flag EnumSliceFlag) CompletionFunc(flagName string) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var allowed []string
+		var err error
 
 		if flag.AllowedFunc != nil {
-			allowed = flag.AllowedFunc(cmd.Context(), cmd, args)
+			allowed, err = flag.AllowedFunc(cmd.Context(), cmd, args)
+			if err != nil {
+				return []string{}, cobra.ShellCompDirectiveError
+			}
 		} else {
 			allowed = make([]string, 0, len(flag.Allowed))
 			if current, err := cmd.Flags().GetStringSlice(flagName); err == nil {
