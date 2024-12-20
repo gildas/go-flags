@@ -183,7 +183,7 @@ func (flag EnumSliceFlag) CompletionFunc(flagName string) func(*cobra.Command, [
 		var err error
 
 		if flag.AllowedFunc != nil {
-			allowed, err = flag.AllowedFunc(cmd.Context(), cmd, args)
+			allowed, err = flag.AllowedFunc(cmd.Context(), cmd, args, toComplete)
 			if err != nil {
 				return []string{}, cobra.ShellCompDirectiveError
 			}
