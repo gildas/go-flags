@@ -177,8 +177,8 @@ func (flag EnumSliceFlag) GetSlice() []string {
 // This function is used by the cobra.Command when it needs to complete the flag value.
 //
 // See: https://pkg.go.dev/github.com/spf13/cobra#Command.RegisterFlagCompletionFunc
-func (flag EnumSliceFlag) CompletionFunc(flagName string) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
-	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func (flag EnumSliceFlag) CompletionFunc(flagName string) (string, func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective)) {
+	return flagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var allowed []string
 		var err error
 
