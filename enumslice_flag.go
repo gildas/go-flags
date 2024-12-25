@@ -151,9 +151,7 @@ func (flag *EnumSliceFlag) Append(value string) error {
 func (flag *EnumSliceFlag) Replace(values []string) error {
 	flag.Values = make([]string, 0, len(values))
 	for _, value := range values {
-		if err := flag.Append(value); err != nil {
-			return err
-		}
+		_ = flag.Append(value)
 	}
 	return nil
 }
@@ -177,13 +175,13 @@ func (flag EnumSliceFlag) GetSlice() []string {
 // This function is used by the cobra.Command when it needs to complete the flag value.
 //
 // See: https://pkg.go.dev/github.com/spf13/cobra#Command.RegisterFlagCompletionFunc
-func (flag EnumSliceFlag) CompletionFunc(flagName string) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
-	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func (flag EnumSliceFlag) CompletionFunc(flagName string) (string, func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective)) {
+	return flagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var allowed []string
 		var err error
 
 		if flag.AllowedFunc != nil {
-			allowed, err = flag.AllowedFunc(cmd.Context(), cmd, args)
+			allowed, err = flag.AllowedFunc(cmd.Context(), cmd, args, toComplete)
 			if err != nil {
 				return []string{}, cobra.ShellCompDirectiveError
 			}

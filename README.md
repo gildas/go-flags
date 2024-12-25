@@ -37,7 +37,7 @@ cmd := &cobra.Command{
 
 state := flags.NewEnumFlag("+one", "two", "three")
 cmd.Flags().Var(state, "state", "State of the flag")
-_ = cmd.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+_ = cmd.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 ```
 
 As you can see, the `EnumFlag` is created with a list of strings that are the only values the flag can take. The `RegisterFlagCompletionFunc` is used to provide completion for the flag.
@@ -56,7 +56,7 @@ state := flags.NewEnumFlagWithFunc("one", func(context.Context, *cobra.Command, 
     return []string{"one", "two", "three"}
 })
 cmd.Flags().Var(state, "state", "State of the flag")
-_ = cmd.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+_ = cmd.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 ```
 
 Note that the default value is not prepended with a `+` in this case.
@@ -73,7 +73,7 @@ cmd := &cobra.Command{
 
 state := flags.NewEnumSliceFlag("+one", "+two", "three")
 cmd.Flags().Var(state, "state", "State of the flag")
-_ = cmd.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+_ = cmd.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 ```
 
 The default values are prepended with a `+`.
@@ -88,7 +88,7 @@ cmd := &cobra.Command{
 
 state := flags.NewEnumSliceFlagWithAllAllowed("one", "two", "three")
 cmd.Flags().Var(state, "state", "State of the flag")
-_ = cmd.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+_ = cmd.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 ```
 
 Note that there is no need to add the `all` value to the list of allowed values.

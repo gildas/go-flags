@@ -8,7 +8,9 @@ import (
 )
 
 // AllowedFunc is a function that returns the allowed values for a flag
-type AllowedFunc func(context.Context, *cobra.Command, []string) ([]string, error)
+//
+// See https://pkg.go.dev/github.com/spf13/cobra@v1.8.1#Command.RegisterFlagCompletionFunc
+type AllowedFunc func(context context.Context, comd *cobra.Command, args []string, toComplete string) ([]string, error)
 
 // EnumFlag represents a flag that can only have a value from a list of allowed values
 //
@@ -93,12 +95,12 @@ func (flag *EnumFlag) Set(value string) (err error) {
 }
 
 // CompletionFunc returns the completion function of the flag
-func (flag *EnumFlag) CompletionFunc(flagName string) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
-	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func (flag *EnumFlag) CompletionFunc(flagName string) (string, func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective)) {
+	return flagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if flag.AllowedFunc != nil {
 			var err error
 
-			flag.Allowed, err = flag.AllowedFunc(cmd.Context(), cmd, args)
+			flag.Allowed, err = flag.AllowedFunc(cmd.Context(), cmd, args, toComplete)
 			if err != nil {
 				return []string{}, cobra.ShellCompDirectiveError
 			}

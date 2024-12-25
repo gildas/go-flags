@@ -129,7 +129,7 @@ func (suite *FlagSuite) TestEnumFlag() {
 	root := suite.NewCommand()
 	state := flags.NewEnumFlag("+one", "two", "three")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	suite.Assert().Equal("one", state.Value)
 
@@ -148,11 +148,11 @@ func (suite *FlagSuite) TestEnumFlag() {
 
 func (suite *FlagSuite) TestEnumFlagWithFunc() {
 	root := suite.NewCommand()
-	state := flags.NewEnumFlagWithFunc("one", func(context.Context, *cobra.Command, []string) ([]string, error) {
+	state := flags.NewEnumFlagWithFunc("one", func(context.Context, *cobra.Command, []string, string) ([]string, error) {
 		return []string{"one", "two", "three"}, nil
 	})
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	suite.Assert().Equal("one", state.Value)
 
@@ -175,11 +175,11 @@ func (suite *FlagSuite) TestEnumFlagWithFunc() {
 
 func (suite *FlagSuite) TestEnumFlagWithFuncReturningError() {
 	root := suite.NewCommand()
-	state := flags.NewEnumFlagWithFunc("one", func(context.Context, *cobra.Command, []string) ([]string, error) {
+	state := flags.NewEnumFlagWithFunc("one", func(context.Context, *cobra.Command, []string, string) ([]string, error) {
 		return []string{}, errors.NotImplemented
 	})
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	output, err := suite.Execute(root, "__complete", "--state", "")
 	suite.Require().NoError(err)
@@ -190,7 +190,7 @@ func (suite *FlagSuite) TestEnumSliceFlag() {
 	root := suite.NewCommandWithSlice()
 	state := flags.NewEnumSliceFlag("+one", "+two", "three")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	values := state.GetSlice()
 	suite.Assert().Equal([]string{"one", "two"}, values)
@@ -223,7 +223,7 @@ func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowed() {
 	root := suite.NewCommandWithSlice()
 	state := flags.NewEnumSliceFlagWithAllAllowed("+one", "two", "+three")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	values := state.GetSlice()
 	suite.Assert().Equal([]string{"one", "three"}, values)
@@ -252,7 +252,7 @@ func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedCompletion() {
 	root := suite.NewCommandWithSlice()
 	state := flags.NewEnumSliceFlagWithAllAllowed("+one", "two", "+three")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	values := state.GetSlice()
 	suite.Assert().Equal([]string{"one", "three"}, values)
@@ -276,11 +276,11 @@ func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedCompletion() {
 
 func (suite *FlagSuite) TestEnumSliceFlagWithFuncShouldHaveDefault() {
 	root := suite.NewCommandWithSlice()
-	state := flags.NewEnumSliceFlagWithFunc(func(context context.Context, cmd *cobra.Command, args []string) ([]string, error) {
+	state := flags.NewEnumSliceFlagWithFunc(func(context.Context, *cobra.Command, []string, string) ([]string, error) {
 		return []string{"one", "two", "three"}, nil
 	}, "one", "two")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	values := state.GetSlice()
 	suite.Assert().Equal([]string{"one", "two"}, values)
@@ -288,11 +288,11 @@ func (suite *FlagSuite) TestEnumSliceFlagWithFuncShouldHaveDefault() {
 
 func (suite *FlagSuite) TestEnumSliceFlagWithFuncShouldAcceptOneValue() {
 	root := suite.NewCommandWithSlice()
-	state := flags.NewEnumSliceFlagWithFunc(func(context context.Context, cmd *cobra.Command, args []string) ([]string, error) {
+	state := flags.NewEnumSliceFlagWithFunc(func(context.Context, *cobra.Command, []string, string) ([]string, error) {
 		return []string{"one", "two", "three"}, nil
 	}, "one", "two")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	output, err := suite.Execute(root, "--state", "one")
 	suite.Require().NoError(err)
@@ -301,11 +301,11 @@ func (suite *FlagSuite) TestEnumSliceFlagWithFuncShouldAcceptOneValue() {
 
 func (suite *FlagSuite) TestEnumSliceFlagWithFuncShouldNotRepeatValues() {
 	root := suite.NewCommandWithSlice()
-	state := flags.NewEnumSliceFlagWithFunc(func(context context.Context, cmd *cobra.Command, args []string) ([]string, error) {
+	state := flags.NewEnumSliceFlagWithFunc(func(context.Context, *cobra.Command, []string, string) ([]string, error) {
 		return []string{"one", "two", "three"}, nil
 	}, "one", "two")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	output, err := suite.Execute(root, "--state", "one", "--state", "two", "--state", "one")
 	suite.Require().NoError(err)
@@ -316,11 +316,11 @@ func (suite *FlagSuite) TestEnumSliceFlagWithFuncShouldNotRepeatValues() {
 
 func (suite *FlagSuite) TestEnumSliceFlagWithFuncShouldAcceptCommaSeparatedValues() {
 	root := suite.NewCommandWithSlice()
-	state := flags.NewEnumSliceFlagWithFunc(func(context context.Context, cmd *cobra.Command, args []string) ([]string, error) {
+	state := flags.NewEnumSliceFlagWithFunc(func(context.Context, *cobra.Command, []string, string) ([]string, error) {
 		return []string{"one", "two", "three"}, nil
 	}, "one", "two")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	output, err := suite.Execute(root, "--state", "one", "--state", "one,two")
 	suite.Require().NoError(err)
@@ -332,11 +332,11 @@ func (suite *FlagSuite) TestEnumSliceFlagWithFuncShouldAcceptCommaSeparatedValue
 func (suite *FlagSuite) TestEnumSliceFlagWithFuncShouldNotAcceptNonAllowedValues() {
 	suite.T().Skip("We cannot test this reliably yet (see bitbucket cli)")
 	root := suite.NewCommandWithSlice()
-	state := flags.NewEnumSliceFlagWithFunc(func(context context.Context, cmd *cobra.Command, args []string) ([]string, error) {
+	state := flags.NewEnumSliceFlagWithFunc(func(context.Context, *cobra.Command, []string, string) ([]string, error) {
 		return []string{"one", "two", "three"}, nil
 	}, "one", "two")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	_, err := suite.Execute(root, "--state", "four")
 	suite.Require().Error(err, "four should not be allowed")
@@ -344,11 +344,11 @@ func (suite *FlagSuite) TestEnumSliceFlagWithFuncShouldNotAcceptNonAllowedValues
 
 func (suite *FlagSuite) TestEnumSliceFlagWithFuncShouldComplete() {
 	root := suite.NewCommandWithSlice()
-	state := flags.NewEnumSliceFlagWithFunc(func(context context.Context, cmd *cobra.Command, args []string) ([]string, error) {
+	state := flags.NewEnumSliceFlagWithFunc(func(context.Context, *cobra.Command, []string, string) ([]string, error) {
 		return []string{"one", "two", "three"}, nil
 	}, "one", "two")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	output, err := suite.Execute(root, "__complete", "--state", "")
 	suite.Require().NoError(err)
@@ -357,11 +357,11 @@ func (suite *FlagSuite) TestEnumSliceFlagWithFuncShouldComplete() {
 
 func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedAndFuncShouldHaveDefault() {
 	root := suite.NewCommandWithSlice()
-	state := flags.NewEnumSliceFlagWithAllAllowedAndFunc(func(context context.Context, cmd *cobra.Command, args []string) ([]string, error) {
+	state := flags.NewEnumSliceFlagWithAllAllowedAndFunc(func(context.Context, *cobra.Command, []string, string) ([]string, error) {
 		return []string{"one", "two", "three"}, nil
 	}, "one", "three")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	values := state.GetSlice()
 	suite.Assert().Equal([]string{"one", "three"}, values)
@@ -369,11 +369,11 @@ func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedAndFuncShouldHaveDefault(
 
 func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedAndFuncShouldNotRepeaseValues() {
 	root := suite.NewCommandWithSlice()
-	state := flags.NewEnumSliceFlagWithAllAllowedAndFunc(func(context context.Context, cmd *cobra.Command, args []string) ([]string, error) {
+	state := flags.NewEnumSliceFlagWithAllAllowedAndFunc(func(context.Context, *cobra.Command, []string, string) ([]string, error) {
 		return []string{"one", "two", "three"}, nil
 	}, "one", "three")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	output, err := suite.Execute(root, "--state", "one", "--state", "two", "--state", "one")
 	suite.Require().NoError(err)
@@ -384,11 +384,11 @@ func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedAndFuncShouldNotRepeaseVa
 
 func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedAndFuncShouldAcceptAllAsValue() {
 	root := suite.NewCommandWithSlice()
-	state := flags.NewEnumSliceFlagWithAllAllowedAndFunc(func(context context.Context, cmd *cobra.Command, args []string) ([]string, error) {
+	state := flags.NewEnumSliceFlagWithAllAllowedAndFunc(func(context.Context, *cobra.Command, []string, string) ([]string, error) {
 		return []string{"one", "two", "three"}, nil
 	}, "one", "three")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	output, err := suite.Execute(root, "--state", "all")
 	suite.Require().NoError(err)
@@ -402,12 +402,41 @@ func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedAndFuncShouldAcceptAllAsV
 func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedAndFuncNotAcceptNotAllowedValues() {
 	suite.T().Skip("We cannot test this reliably yet (see bitbucket cli)")
 	root := suite.NewCommandWithSlice()
-	state := flags.NewEnumSliceFlagWithAllAllowedAndFunc(func(context context.Context, cmd *cobra.Command, args []string) ([]string, error) {
+	state := flags.NewEnumSliceFlagWithAllAllowedAndFunc(func(context.Context, *cobra.Command, []string, string) ([]string, error) {
 		return []string{"one", "two", "three"}, nil
 	}, "one", "three")
 	root.Flags().Var(state, "state", "State of the flag")
-	_ = root.RegisterFlagCompletionFunc("state", state.CompletionFunc("state"))
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	_, err := suite.Execute(root, "--state", "four")
 	suite.Require().Error(err, "four should not be allowed")
+}
+
+func (suite *FlagSuite) TestEnumSliceFlagWithFuncReturningError() {
+
+	root := suite.NewCommandWithSlice()
+	state := flags.NewEnumSliceFlagWithFunc(func(context.Context, *cobra.Command, []string, string) ([]string, error) {
+		return []string{}, errors.NotImplemented
+	}, "one", "two")
+	root.Flags().Var(state, "state", "State of the flag")
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
+
+	output, err := suite.Execute(root, "__complete", "--state", "")
+	suite.Require().NoError(err)
+	suite.Assert().Equal(":1\nCompletion ended with directive: ShellCompDirectiveError\n", output)
+}
+
+func (suite *FlagSuite) TestEnumSliceFlagCanReplaceValues() {
+	root := suite.NewCommandWithSlice()
+	state := flags.NewEnumSliceFlag("+one", "+two", "three")
+	root.Flags().Var(state, "state", "State of the flag")
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
+
+	values := state.GetSlice()
+	suite.Assert().Equal([]string{"one", "two"}, values)
+
+	err := state.Replace([]string{"one", "three"})
+	suite.Require().NoError(err)
+	values = state.GetSlice()
+	suite.Assert().Equal([]string{"one", "three"}, values)
 }
