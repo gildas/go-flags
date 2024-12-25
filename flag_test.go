@@ -411,3 +411,32 @@ func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedAndFuncNotAcceptNotAllowe
 	_, err := suite.Execute(root, "--state", "four")
 	suite.Require().Error(err, "four should not be allowed")
 }
+
+func (suite *FlagSuite) TestEnumSliceFlagWithFuncReturningError() {
+
+	root := suite.NewCommandWithSlice()
+	state := flags.NewEnumSliceFlagWithFunc(func(context.Context, *cobra.Command, []string, string) ([]string, error) {
+		return []string{}, errors.NotImplemented
+	}, "one", "two")
+	root.Flags().Var(state, "state", "State of the flag")
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
+
+	output, err := suite.Execute(root, "__complete", "--state", "")
+	suite.Require().NoError(err)
+	suite.Assert().Equal(":1\nCompletion ended with directive: ShellCompDirectiveError\n", output)
+}
+
+func (suite *FlagSuite) TestEnumSliceFlagCanReplaceValues() {
+	root := suite.NewCommandWithSlice()
+	state := flags.NewEnumSliceFlag("+one", "+two", "three")
+	root.Flags().Var(state, "state", "State of the flag")
+	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
+
+	values := state.GetSlice()
+	suite.Assert().Equal([]string{"one", "two"}, values)
+
+	err := state.Replace([]string{"one", "three"})
+	suite.Require().NoError(err)
+	values = state.GetSlice()
+	suite.Assert().Equal([]string{"one", "three"}, values)
+}

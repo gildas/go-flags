@@ -151,9 +151,7 @@ func (flag *EnumSliceFlag) Append(value string) error {
 func (flag *EnumSliceFlag) Replace(values []string) error {
 	flag.Values = make([]string, 0, len(values))
 	for _, value := range values {
-		if err := flag.Append(value); err != nil {
-			return err
-		}
+		_ = flag.Append(value)
 	}
 	return nil
 }
