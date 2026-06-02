@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/gildas/go-core"
-	"github.com/gildas/go-errors"
 	"github.com/spf13/cobra"
 )
 
@@ -18,6 +17,7 @@ type EnumSliceFlag struct {
 	AllowedFunc AllowedFunc
 	AllAllowed  bool
 	all         bool
+	cmd         *cobra.Command
 }
 
 // Type returns the type of the flag
@@ -55,10 +55,14 @@ func NewEnumSliceFlag(allowed ...string) *EnumSliceFlag {
 }
 
 // NewEnumSliceFlagWithFunc creates a new EnumSliceFlag
-func NewEnumSliceFlagWithFunc(allowedFunc AllowedFunc, defaultvalues ...string) *EnumSliceFlag {
+func NewEnumSliceFlagWithFunc(cmd *cobra.Command, allowedFunc AllowedFunc, defaultvalues ...string) *EnumSliceFlag {
+	if cmd == nil {
+		panic("cobra.Command cmd cannot be nil")
+	}
 	return &EnumSliceFlag{
 		AllowedFunc: allowedFunc,
 		Default:     append([]string{}, defaultvalues...),
+		cmd:         cmd,
 	}
 }
 
@@ -80,8 +84,8 @@ func NewEnumSliceFlagWithAllAllowed(allowed ...string) *EnumSliceFlag {
 }
 
 // NewEnumSliceFlagWithAllAllowedAndFunc creates a new EnumSliceFlag
-func NewEnumSliceFlagWithAllAllowedAndFunc(allowedFunc AllowedFunc, defaultvalues ...string) *EnumSliceFlag {
-	flag := NewEnumSliceFlagWithFunc(allowedFunc, defaultvalues...)
+func NewEnumSliceFlagWithAllAllowedAndFunc(cmd *cobra.Command, allowedFunc AllowedFunc, defaultvalues ...string) *EnumSliceFlag {
+	flag := NewEnumSliceFlagWithFunc(cmd, allowedFunc, defaultvalues...)
 	flag.AllAllowed = true
 	return flag
 }
@@ -108,8 +112,7 @@ func (flag EnumSliceFlag) String() string {
 // implements pflag.Value
 func (flag *EnumSliceFlag) Set(value string) (err error) {
 	if flag.AllowedFunc != nil && len(flag.Allowed) == 0 { // Unfortunatly, as of now, we cannot call the function to get the allowed values
-		// TODO: Find a way to call the function to get the allowed values
-		return flag.Append(value) // so we just add the value
+		flag.Allowed, _ = flag.AllowedFunc(flag.cmd.Context(), flag.cmd, nil, "")
 	}
 	if value == "all" && flag.AllAllowed {
 		flag.Values = flag.Allowed
@@ -130,7 +133,7 @@ func (flag *EnumSliceFlag) Set(value string) (err error) {
 	if found {
 		return nil
 	}
-	return errors.ArgumentInvalid.With("value", value, strings.Join(flag.Allowed, ", "))
+	return InvalidEnumValue.With(value, strings.Join(flag.Allowed, ", "))
 }
 
 // Append appends a value to the flag
