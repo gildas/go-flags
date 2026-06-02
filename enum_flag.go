@@ -2,6 +2,7 @@ package flags
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -10,7 +11,7 @@ import (
 // AllowedFunc is a function that returns the allowed values for a flag
 //
 // See https://pkg.go.dev/github.com/spf13/cobra@v1.8.1#Command.RegisterFlagCompletionFunc
-type AllowedFunc func(context context.Context, comd *cobra.Command, args []string, toComplete string) ([]string, error)
+type AllowedFunc func(ctx context.Context, cmd *cobra.Command, args []string, toComplete string) ([]string, error)
 
 // EnumFlag represents a flag that can only have a value from a list of allowed values
 //
@@ -19,6 +20,7 @@ type EnumFlag struct {
 	Allowed     []string
 	AllowedFunc AllowedFunc
 	Value       string
+	cmd         *cobra.Command
 }
 
 // NewEnumFlag creates a new EnumFlag
@@ -51,10 +53,14 @@ func NewEnumFlag(allowed ...string) *EnumFlag {
 }
 
 // NewEnumFlagWithFunc creates a new EnumFlag with a function to get the allowed values
-func NewEnumFlagWithFunc(defaultValue string, allowedFunc AllowedFunc) *EnumFlag {
+func NewEnumFlagWithFunc(cmd *cobra.Command, defaultValue string, allowedFunc AllowedFunc) *EnumFlag {
+	if cmd == nil {
+		panic("cobra.Command cmd cannot be nil")
+	}
 	return &EnumFlag{
 		AllowedFunc: allowedFunc,
 		Value:       defaultValue,
+		cmd:         cmd,
 	}
 }
 
@@ -74,24 +80,18 @@ func (flag EnumFlag) String() string {
 
 // Set sets the flag value
 //
+// If the AllowedFunc is set, the Allowed values are ignored and the function is called to get the allowed values.
+//
 // implements pflag.Value
 func (flag *EnumFlag) Set(value string) (err error) {
-	/* We cannot call the AllowedFunc here because the command is not yet available */
-	/*
-		if flag.AllowedFunc != nil && len(flag.Allowed) == 0 {
-			log := logger.Create("Flags", &logger.NilStream{})
-			flag.Allowed, _ = flag.AllowedFunc(log.ToContext(context.Background()), nil, nil)
-		}
-		for _, allowed := range flag.Allowed {
-			if value == allowed {
-				flag.Value = value
-				return nil
-			}
-		}
-		return errors.ArgumentInvalid.With("value", value, strings.Join(flag.Allowed, ", "))
-	*/
-	flag.Value = value
-	return nil
+	if flag.AllowedFunc != nil && len(flag.Allowed) == 0 {
+		flag.Allowed, _ = flag.AllowedFunc(flag.cmd.Context(), flag.cmd, nil, "")
+	}
+	if slices.Contains(flag.Allowed, value) {
+		flag.Value = value
+		return nil
+	}
+	return InvalidEnumValue.With(value, strings.Join(flag.Allowed, ", "))
 }
 
 // CompletionFunc returns the completion function of the flag
