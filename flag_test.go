@@ -144,7 +144,7 @@ func (suite *FlagSuite) TestEnumFlag() {
 	// See enum_flag.go for the commented code
 	_, err = suite.Execute(root, "--state", "four")
 	suite.Require().Error(err)
-	suite.Equal("invalid argument \"four\" for \"--state\" flag: Flag value \"four\" in invalid. Expected values are one, two, three", err.Error())
+	suite.Equal("invalid argument \"four\" for \"--state\" flag: Flag value \"four\" is invalid. Expected values are one, two, three", err.Error())
 }
 
 func (suite *FlagSuite) TestEnumFlagWithFunc() {
@@ -171,7 +171,7 @@ func (suite *FlagSuite) TestEnumFlagWithFunc() {
 
 	_, err = suite.Execute(root, "--state", "four")
 	suite.Require().Error(err)
-	suite.Equal("invalid argument \"four\" for \"--state\" flag: Flag value \"four\" in invalid. Expected values are one, two, three", err.Error())
+	suite.Equal("invalid argument \"four\" for \"--state\" flag: Flag value \"four\" is invalid. Expected values are one, two, three", err.Error())
 }
 
 func (suite *FlagSuite) TestEnumFlagWithFuncShouldHaveCommand() {
@@ -422,7 +422,7 @@ func (suite *FlagSuite) TestEnumSliceFlagWithAllAllowedAndFuncNotAcceptNotAllowe
 	_ = root.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 
 	_, err := suite.Execute(root, "--state", "four")
-	suite.Equal("invalid argument \"four\" for \"--state\" flag: Flag value \"four\" in invalid. Expected values are one, two, three", err.Error())
+	suite.Equal("invalid argument \"four\" for \"--state\" flag: Flag value \"four\" is invalid. Expected values are one, two, three", err.Error())
 }
 
 func (suite *FlagSuite) TestEnumSliceFlagWithFuncReturningError() {

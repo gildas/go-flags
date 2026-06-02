@@ -7,5 +7,5 @@ import (
 )
 
 var (
-	InvalidEnumValue = errors.NewSentinel(http.StatusBadRequest, "error.value.invalid", "Flag value \"%s\" in invalid. Expected values are %s")
+	InvalidEnumValue = errors.NewSentinel(http.StatusBadRequest, "error.value.invalid", "Flag value \"%s\" is invalid. Expected values are %s")
 )
