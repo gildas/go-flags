@@ -52,7 +52,7 @@ cmd := &cobra.Command{
     . . .
 }
 
-state := flags.NewEnumFlagWithFunc("one", func(context.Context, *cobra.Command, []string) []string {
+state := flags.NewEnumFlagWithFunc(cmd, "one", func(context.Context, *cobra.Command, []string) []string {
     return []string{"one", "two", "three"}
 })
 cmd.Flags().Var(state, "state", "State of the flag")
@@ -60,6 +60,8 @@ _ = cmd.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 ```
 
 Note that the default value is not prepended with a `+` in this case.
+
+**Note:** Since 0.5.0, when creating the `EnumFlag` with a function, you must provide the command as the first argument. This is a breaking change from previous versions.
 
 ### EnumSliceFlag
 
@@ -92,3 +94,21 @@ _ = cmd.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
 ```
 
 Note that there is no need to add the `all` value to the list of allowed values.
+
+Similarly to `EnumFlag`, you can provide a function that will be called to get the list of allowed values:
+
+```go
+cmd := &cobra.Command{
+    Use: "myapp",
+    . . .
+}
+
+state := flags.NewEnumSliceFlagWithFunc(cmd, func(context.Context, *cobra.Command, []string) []string {
+    return []string{"one", "two", "three"}
+})
+cmd.Flags().Var(state, "state", "State of the flag")
+_ = cmd.RegisterFlagCompletionFunc(state.CompletionFunc("state"))
+```
+
+
+**Note:** Since 0.5.0, when creating the `EnumFlag` with a function, you must provide the command as the first argument. This is a breaking change from previous versions.
